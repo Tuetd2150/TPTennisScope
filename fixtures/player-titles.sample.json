@@ -1,0 +1,41 @@
+{
+  "playerId": 14882,
+  "titles": [
+    {
+      "tourRankId": 4,
+      "tourRank": "Grand Slam",
+      "titlesWon": 3,
+      "titlesLost": 0
+    },
+    {
+      "tourRankId": 3,
+      "tourRank": "Masters series",
+      "titlesWon": 4,
+      "titlesLost": 2
+    },
+    {
+      "tourRankId": 2,
+      "tourRank": "Main tour",
+      "titlesWon": 8,
+      "titlesLost": 3
+    },
+    {
+      "tourRankId": 7,
+      "tourRank": "Tour finals",
+      "titlesWon": 1,
+      "titlesLost": 0
+    },
+    {
+      "tourRankId": 1,
+      "tourRank": "Challengers/ITF > $10K",
+      "titlesWon": 2,
+      "titlesLost": 1
+    },
+    {
+      "tourRankId": 5,
+      "tourRank": "Davis/Fed Cup",
+      "titlesWon": 1,
+      "titlesLost": 0
+    }
+  ]
+}

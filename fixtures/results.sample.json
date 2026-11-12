@@ -1,0 +1,88 @@
+{
+  "date": "2026-09-30",
+  "results": [
+    {
+      "matchId": 280145,
+      "date": "2026-09-30T00:00:00",
+      "roundId": 6,
+      "roundName": "Final",
+      "player1": {
+        "id": 14882,
+        "name": "Jannik Sinner"
+      },
+      "player2": {
+        "id": 17450,
+        "name": "Carlos Alcaraz"
+      },
+      "match_winner": 14882,
+      "result": "6-3, 6-7(4), 7-5",
+      "result_type": "COMPLETED",
+      "best_of": 3,
+      "tournament": {
+        "id": 8822,
+        "name": "Beijing Open",
+        "courtId": 1,
+        "surface": "Hard",
+        "country": { "id": "CHN", "name": "China" },
+        "levelId": 2,
+        "levelName": "Main tour"
+      }
+    },
+    {
+      "matchId": 280146,
+      "date": "2026-09-30T00:00:00",
+      "roundId": 5,
+      "roundName": "Semifinal",
+      "player1": {
+        "id": 6415,
+        "name": "Alexander Zverev"
+      },
+      "player2": {
+        "id": 7989,
+        "name": "Daniil Medvedev"
+      },
+      "match_winner": 6415,
+      "result": "7-6(5), 6-4",
+      "result_type": "COMPLETED",
+      "best_of": 3,
+      "tournament": {
+        "id": 8822,
+        "name": "Beijing Open",
+        "courtId": 1,
+        "surface": "Hard",
+        "country": { "id": "CHN", "name": "China" },
+        "levelId": 2,
+        "levelName": "Main tour"
+      }
+    },
+    {
+      "matchId": 280200,
+      "date": "2026-09-30T00:00:00",
+      "roundId": 4,
+      "roundName": "Quarterfinal",
+      "player1": {
+        "id": 99901,
+        "name": "Player A / Player B"
+      },
+      "player2": {
+        "id": 99902,
+        "name": "Player C / Player D"
+      },
+      "match_winner": 99901,
+      "result": "6-4, 7-5",
+      "result_type": "COMPLETED",
+      "best_of": 3,
+      "tournament": {
+        "id": 8822,
+        "name": "Beijing Open",
+        "courtId": 1,
+        "surface": "Hard",
+        "country": { "id": "CHN", "name": "China" },
+        "levelId": 2,
+        "levelName": "Main tour"
+      }
+    }
+  ],
+  "hasNextPage": false,
+  "totalPages": 1
+}

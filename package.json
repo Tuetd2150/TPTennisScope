@@ -1,0 +1,34 @@
+{
+  "name": "tennisscope",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TennisScope — ATP Men's Singles Top 100 analytics platform",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run migrate --workspace=backend",
+    "db:seed": "npm run seed --workspace=backend",
+    "db:generate": "npm run generate --workspace=backend",
+    "dev": "concurrently -n BE,FE -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "lint": "concurrently \"npm run lint --workspace=backend\" \"npm run lint --workspace=frontend\"",
+    "typecheck": "concurrently \"npm run typecheck --workspace=backend\" \"npm run typecheck --workspace=frontend\"",
+    "test": "concurrently \"npm run test --workspace=backend\" \"npm run test --workspace=frontend\"",
+    "build": "concurrently \"npm run build --workspace=backend\" \"npm run build --workspace=frontend\"",
+    "sync:rankings": "npm run sync:rankings --workspace=backend",
+    "sync:matches": "npm run sync:matches --workspace=backend",
+    "sync:profiles": "npm run sync:profiles --workspace=backend",
+    "sync:backfill": "npm run sync:backfill --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

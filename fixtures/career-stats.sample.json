@@ -1,0 +1,21 @@
+{
+  "playerId": 14882,
+  "statistics": {
+    "career": {
+      "wins": 265,
+      "losses": 58,
+      "titles": 18,
+      "finals": 24,
+      "runnerUp": 6,
+      "favouriteSurface": "Hard"
+    },
+    "careerHigh": {
+      "singles": 1,
+      "singlesDate": "2024-06-10"
+    },
+    "currentRanking": {
+      "singles": 1,
+      "singlesPoints": 11830
+    }
+  }
+}

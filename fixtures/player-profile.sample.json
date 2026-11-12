@@ -1,0 +1,37 @@
+{
+  "player": {
+    "id": 14882,
+    "name": "Jannik Sinner",
+    "birthday": "2001-08-16T00:00:00",
+    "playerStatus": "Active",
+    "turnedPro": 2018,
+    "height": null,
+    "weight": null,
+    "birthplace": "San Candido, Italy",
+    "residence": "Monte Carlo, Monaco",
+    "plays": "Right-Handed, Two-Handed Backhand",
+    "coach": "Darren Cahill & Simone Vagnozzi",
+    "country": {
+      "id": "ITA",
+      "name": "Italy"
+    },
+    "information": {
+      "height": "188 cm",
+      "weight": "76 kg",
+      "birthPlace": "San Candido, Italy",
+      "residence": "Monte Carlo, Monaco"
+    },
+    "ranking": {
+      "singles": 1,
+      "singlesPoints": 11830
+    },
+    "careerHigh": {
+      "singles": 1,
+      "singlesDate": "2024-06-10"
+    },
+    "form": {
+      "singles": ["W", "W", "L", "W", "W"]
+    },
+    "imagePath": "/tennis/v2/ms-api/uploads/Photo/atp/14882.jpg"
+  }
+}

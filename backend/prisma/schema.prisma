@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Hand {
+  RIGHT
+  LEFT
+  UNKNOWN
+}
+
+enum Backhand {
+  ONE_HANDED
+  TWO_HANDED
+  UNKNOWN
+}
+
+enum SyncJobType {
+  RANKING
+  MATCH_RESULTS
+  MATCH_STATS
+  PLAYER_PROFILE
+  PLAYER_CAREER
+  PLAYER_TITLES
+  PLAYER_IMAGE
+  BACKFILL
+  API_USAGE
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRY
+}
+
+model Player {
+  id              Int       @id @default(autoincrement())
+  externalId      Int       @unique
+  name            String
+  birthday        DateTime?
+  countryCode     String?
+  turnedPro       Int?
+  heightCm        Int?
+  weightKg        Int?
+  birthplace      String?
+  residence       String?
+  hand            Hand      @default(UNKNOWN)
+  backhand        Backhand  @default(UNKNOWN)
+  coach           String?
+  status          String?
+  careerHighRank  Int?
+  careerHighDate  DateTime?
+  imagePath       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  careerStat      PlayerCareerStat?
+  rankings        RankingSnapshot[]
+  matchesAsPlayer1 Match[]  @relation("Player1")
+  matchesAsPlayer2 Match[]  @relation("Player2")
+  matchesWon      Match[]   @relation("Winner")
+  matchesLost     Match[]   @relation("Loser")
+  matchStats      MatchPlayerStat[]
+  titles          PlayerTitle[]
+
+  @@index([name])
+}
+
+model PlayerCareerStat {
+  id              Int       @id @default(autoincrement())
+  playerId        Int       @unique
+  player          Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  careerWins      Int?
+  careerLosses    Int?
+  favouriteSurface String?
+  careerFinals    Int?
+  careerTitles    Int?
+  careerRunnerUps Int?
+  updatedAt       DateTime  @updatedAt
+}
+
+model RankingSnapshot {
+  id            Int       @id @default(autoincrement())
+  playerId      Int
+  player        Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  rankingDate   DateTime
+  rank          Int
+  points        Int
+  createdAt     DateTime  @default(now())
+
+  @@unique([playerId, rankingDate])
+  @@index([rankingDate])
+  @@index([rank])
+}
+
+model Tournament {
+  id           Int       @id @default(autoincrement())
+  externalId   Int       @unique
+  name         String
+  season       Int?
+  courtId      Int?
+  surface      String?
+  countryCode  String?
+  levelId      Int?
+  levelName    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  matches      Match[]
+}
+
+model Match {
+  id               Int       @id @default(autoincrement())
+  externalMatchId  Int       @unique
+  tournamentId     Int?
+  tournament       Tournament? @relation(fields: [tournamentId], references: [id])
+  matchDate        DateTime
+  roundId          Int?
+  roundName        String?
+  player1Id        Int
+  player1          Player    @relation("Player1", fields: [player1Id], references: [id])
+  player2Id        Int
+  player2          Player    @relation("Player2", fields: [player2Id], references: [id])
+  winnerId         Int
+  winner           Player    @relation("Winner", fields: [winnerId], references: [id])
+  loserId          Int
+  loser            Player    @relation("Loser", fields: [loserId], references: [id])
+  score            String?
+  status           String?
+  bestOf           Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  playerStats      MatchPlayerStat[]
+
+  @@index([matchDate])
+  @@index([winnerId])
+  @@index([loserId])
+  @@index([player1Id])
+  @@index([player2Id])
+}
+
+model MatchPlayerStat {
+  id                        Int       @id @default(autoincrement())
+  matchId                   Int
+  match                     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId                  Int
+  player                    Player    @relation(fields: [playerId], references: [id])
+
+  aces                      Int?
+  doubleFaults              Int?
+  firstServe                Int?
+  firstServeOf              Int?
+  firstServePointsWon       Int?
+  firstServePointsTotal     Int?
+  secondServePointsWon      Int?
+  secondServePointsTotal    Int?
+  breakPointsFaced          Int?
+  breakPointsSaved          Int?
+  breakPointChances         Int?
+  breakPointsWon            Int?
+  winners                   Int?
+  unforcedErrors            Int?
+  netApproaches             Int?
+  netApproachesTotal        Int?
+  totalPointsWon            Int?
+  fastestServe              String?
+  averageFirstServeSpeed    String?
+  averageSecondServeSpeed   String?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@unique([matchId, playerId])
+}
+
+model PlayerTitle {
+  id            Int       @id @default(autoincrement())
+  playerId      Int
+  player        Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  tourRankId    Int
+  tourRankName  String
+  titlesWon     Int
+  finalsLost    Int
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([playerId, tourRankId])
+}
+
+model SyncJob {
+  id            Int            @id @default(autoincrement())
+  type          SyncJobType
+  status        SyncJobStatus  @default(PENDING)
+  targetKey     String?
+  payload       Json?
+  requestsUsed  Int            @default(0)
+  attemptCount  Int            @default(0)
+  errorMessage  String?
+  scheduledFor  DateTime?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([type, status])
+  @@index([scheduledFor])
+}

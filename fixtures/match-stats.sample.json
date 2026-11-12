@@ -1,0 +1,51 @@
+{
+  "matchId": 280145,
+  "statistics": [
+    {
+      "playerId": 14882,
+      "aces": 12,
+      "doubleFaults": 3,
+      "firstServe": 58,
+      "firstServeOf": 89,
+      "winningOnFirstServe": 42,
+      "winningOnFirstServeOf": 58,
+      "winningOnSecondServe": 18,
+      "winningOnSecondServeOf": 31,
+      "breakPointFacedGm": 8,
+      "breakPointSavedGm": 5,
+      "breakPointChanceGm": 12,
+      "breakPointWonGm": 4,
+      "winners": 35,
+      "unforcedErrors": 22,
+      "netApproaches": 8,
+      "netApproachesOf": 12,
+      "totalPointsWon": 95,
+      "fastestServe": "222 km/h",
+      "averageFirstServeSpeed": "198 km/h",
+      "averageSecondServeSpeed": "155 km/h"
+    },
+    {
+      "playerId": 17450,
+      "aces": 8,
+      "doubleFaults": 5,
+      "firstServe": 52,
+      "firstServeOf": 85,
+      "winningOnFirstServe": 36,
+      "winningOnFirstServeOf": 52,
+      "winningOnSecondServe": 15,
+      "winningOnSecondServeOf": 33,
+      "breakPointFacedGm": 10,
+      "breakPointSavedGm": 6,
+      "breakPointChanceGm": 8,
+      "breakPointWonGm": 3,
+      "winners": 41,
+      "unforcedErrors": 30,
+      "netApproaches": 15,
+      "netApproachesOf": 20,
+      "totalPointsWon": 88,
+      "fastestServe": "218 km/h",
+      "averageFirstServeSpeed": "195 km/h",
+      "averageSecondServeSpeed": "152 km/h"
+    }
+  ]
+}

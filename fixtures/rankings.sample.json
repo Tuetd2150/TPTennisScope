@@ -1,0 +1,117 @@
+{
+  "rankingDate": "2026-09-30",
+  "rankings": [
+    {
+      "playerId": 14882,
+      "rank": 1,
+      "points": 11830,
+      "player": {
+        "id": 14882,
+        "name": "Jannik Sinner",
+        "country": { "id": "ITA", "name": "Italy" },
+        "birthday": "2001-08-16T00:00:00"
+      }
+    },
+    {
+      "playerId": 17450,
+      "rank": 2,
+      "points": 8770,
+      "player": {
+        "id": 17450,
+        "name": "Carlos Alcaraz",
+        "country": { "id": "ESP", "name": "Spain" },
+        "birthday": "2003-05-05T00:00:00"
+      }
+    },
+    {
+      "playerId": 6415,
+      "rank": 3,
+      "points": 7115,
+      "player": {
+        "id": 6415,
+        "name": "Alexander Zverev",
+        "country": { "id": "GER", "name": "Germany" },
+        "birthday": "1997-04-20T00:00:00"
+      }
+    },
+    {
+      "playerId": 4920,
+      "rank": 4,
+      "points": 6900,
+      "player": {
+        "id": 4920,
+        "name": "Novak Djokovic",
+        "country": { "id": "SRB", "name": "Serbia" },
+        "birthday": "1987-05-22T00:00:00"
+      }
+    },
+    {
+      "playerId": 6574,
+      "rank": 5,
+      "points": 6020,
+      "player": {
+        "id": 6574,
+        "name": "Taylor Fritz",
+        "country": { "id": "USA", "name": "United States" },
+        "birthday": "1997-10-28T00:00:00"
+      }
+    },
+    {
+      "playerId": 7989,
+      "rank": 6,
+      "points": 5550,
+      "player": {
+        "id": 7989,
+        "name": "Daniil Medvedev",
+        "country": { "id": "RUS", "name": "Russia" },
+        "birthday": "1996-02-11T00:00:00"
+      }
+    },
+    {
+      "playerId": 16571,
+      "rank": 7,
+      "points": 4710,
+      "player": {
+        "id": 16571,
+        "name": "Holger Rune",
+        "country": { "id": "DEN", "name": "Denmark" },
+        "birthday": "2003-04-29T00:00:00"
+      }
+    },
+    {
+      "playerId": 14369,
+      "rank": 8,
+      "points": 4210,
+      "player": {
+        "id": 14369,
+        "name": "Alex de Minaur",
+        "country": { "id": "AUS", "name": "Australia" },
+        "birthday": "1999-02-17T00:00:00"
+      }
+    },
+    {
+      "playerId": 7421,
+      "rank": 9,
+      "points": 3905,
+      "player": {
+        "id": 7421,
+        "name": "Casper Ruud",
+        "country": { "id": "NOR", "name": "Norway" },
+        "birthday": "1998-12-22T00:00:00"
+      }
+    },
+    {
+      "playerId": 6839,
+      "rank": 10,
+      "points": 3590,
+      "player": {
+        "id": 6839,
+        "name": "Grigor Dimitrov",
+        "country": { "id": "BUL", "name": "Bulgaria" },
+        "birthday": "1991-05-16T00:00:00"
+      }
+    }
+  ],
+  "hasNextPage": true,
+  "totalPages": 45
+}

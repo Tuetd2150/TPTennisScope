@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+dist/
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+*.tsbuildinfo
+
+# Player images (cached from API)
+backend/storage/player-images/*
+!backend/storage/player-images/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
