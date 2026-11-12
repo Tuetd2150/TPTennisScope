@@ -1,16 +1,8 @@
 # TennisScope Antigravity Customization Pack v1
 
-Bộ cấu hình project-local dành riêng cho `D:\TPTennisScope`.
-
-Mục tiêu của bộ này là chuyển những quy tắc, kinh nghiệm và quy trình đã được kiểm chứng trong quá trình xây TennisScope ra khỏi prompt dài, để Antigravity có thể tự nạp đúng ngữ cảnh theo task.
-
 ## Cài đặt
 
-1. Giải nén gói này.
-2. Copy **hai mục** sau vào root của project TennisScope:
-   - `AGENTS.md`
-   - `.agents/`
-3. Cấu trúc sau khi copy nên là:
+3. Cấu trúc:
 
 ```text
 D:\TPTennisScope
@@ -21,10 +13,6 @@ D:\TPTennisScope
 ├── package.json
 └── ...
 ```
-
-4. Mở Antigravity bằng workspace `D:\TPTennisScope`.
-5. Mở một conversation mới nếu cần để Antigravity discovery lại customization.
-6. Trong Antigravity IDE/App, có thể kiểm tra các skill/rule trong phần Customizations.
 
 ## Thành phần
 
@@ -73,34 +61,6 @@ PASS: rules
 PASS: skills
 PASS: resources
 Customization pack hợp lệ.
-```
-
-## Cách prompt sau khi cài
-
-Không cần lặp lại toàn bộ constraint của project.
-
-Ví dụ:
-
-```text
-Triển khai dynamic Top 100 và ranking scheduler. Chưa gọi API thật.
-```
-
-Hoặc:
-
-```text
-Dùng /tennisscope-match-sync để triển khai match sync mỗi 6 giờ. Mock test trước, chưa chạy live.
-```
-
-Hoặc:
-
-```text
-Dùng /tennisscope-db-audit kiểm tra tay vợt rank #3 mùa 2026 và cho biết cần bao nhiêu request để hoàn thiện.
-```
-
-Hoặc:
-
-```text
-Chạy /tennisscope-verify cho thay đổi vừa làm.
 ```
 
 ## Nguyên tắc bảo trì
