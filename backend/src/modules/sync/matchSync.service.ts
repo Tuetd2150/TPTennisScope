@@ -3,11 +3,35 @@ import { tennisApiClient } from '../../clients/tennisApi.client';
 import { matchRepository } from '../matches/match.repository';
 import { tournamentRepository } from '../tournaments/tournament.repository';
 import { playerRepository } from '../players/player.repository';
+import { rankingRepository } from '../rankings/ranking.repository';
 import { syncRepository } from './sync.repository';
 import { SyncJobType, SyncJobStatus } from '@prisma/client';
 import { isSinglesMatch, normalizeSurface } from '../../utils/tennisStats';
 import { env } from '../../config/env';
 import { normalizeMatchPlayerStats } from './normalizers';
+
+export interface MatchSyncResult {
+  processed: number;
+  inserted: number;
+  ignoredOutsideTop100: number;
+  skipped: number;
+  requestsUsed: number;
+}
+
+/**
+ * OR Rule: A singles match is tracked if and only if
+ * AT LEAST ONE of the participants belongs to the Current Top 100.
+ */
+export function shouldTrackSinglesMatch(
+  player1ExternalId: number,
+  player2ExternalId: number,
+  currentTop100ExternalIds: Set<number>
+): boolean {
+  return (
+    currentTop100ExternalIds.has(player1ExternalId) ||
+    currentTop100ExternalIds.has(player2ExternalId)
+  );
+}
 
 export class MatchSyncService {
   private async checkBudget(count: number = 1): Promise<boolean> {
@@ -29,10 +53,16 @@ export class MatchSyncService {
     return `${year}-${month}-${day}`;
   }
 
-  async backfillPlayerSeason(playerExternalId: number, year: number = 2026) {
+  async backfillPlayerSeason(
+    playerExternalId: number,
+    year: number = 2026,
+    options?: { maxPages?: number }
+  ) {
+    const maxPages = options?.maxPages ?? 1;
+
     if (!(await this.checkBudget(1))) {
       console.log('[MatchSync] No API budget remaining for player season backfill');
-      return { totalMatches: 0, newMatches: 0, requestsUsed: 0 };
+      return { totalMatches: 0, newMatches: 0, requestsUsed: 0, hasNextPage: false };
     }
 
     const targetKey = `${playerExternalId}:${year}`;
@@ -57,6 +87,13 @@ export class MatchSyncService {
       while (hasNextPage) {
         if (!(await this.checkBudget())) {
           console.log('[MatchSync] Budget exhausted during past-matches pagination');
+          break;
+        }
+
+        if (actualRequestsCount >= maxPages) {
+          if (hasNextPage) {
+            console.warn(`[MatchSync] Past-matches pagination available, but stopped after ${actualRequestsCount} page(s) due to maxPages limit`);
+          }
           break;
         }
 
@@ -209,7 +246,12 @@ export class MatchSyncService {
       });
 
       console.log(`[MatchSync] Backfill completed for player ${playerExternalId} (${year}): processed=${totalMatchesProcessed}, inserted/updated=${totalMatchesInserted}, requestsUsed=${actualRequestsCount}`);
-      return { totalMatches: totalMatchesProcessed, newMatches: totalMatchesInserted, requestsUsed: actualRequestsCount };
+      return {
+        totalMatches: totalMatchesProcessed,
+        newMatches: totalMatchesInserted,
+        requestsUsed: actualRequestsCount,
+        hasNextPage: Boolean(hasNextPage && actualRequestsCount >= maxPages),
+      };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[MatchSync] Backfill failed for player ${playerExternalId}:`, message);
@@ -222,10 +264,10 @@ export class MatchSyncService {
     }
   }
 
-  async sync(date?: string) {
+  async sync(date?: string, customResultsData?: unknown): Promise<MatchSyncResult | undefined> {
     const targetDate = date || this.getTodayDateString();
     
-    if (!(await this.checkBudget())) {
+    if (!customResultsData && !(await this.checkBudget())) {
       console.log('[MatchSync] No API budget remaining, skipping sync');
       return;
     }
@@ -234,32 +276,60 @@ export class MatchSyncService {
     await syncRepository.updateJob(job.id, { status: SyncJobStatus.RUNNING, startedAt: new Date() });
 
     try {
+      // 1. Load current Top 100 external IDs dynamically from DB
+      const currentTop100ExternalIds = await rankingRepository.getCurrentTop100ExternalIds();
+      console.log(`[MatchSync] Loaded ${currentTop100ExternalIds.size} current Top 100 players from database`);
+
       let pageNo = 1;
       let hasNextPage = true;
       let totalProcessed = 0;
       let totalSkipped = 0;
       let totalInserted = 0;
+      let totalIgnoredOutsideTop100 = 0;
       let actualRequestsCount = 0;
 
       while (hasNextPage) {
-        if (!(await this.checkBudget())) {
-          console.log('[MatchSync] Budget exhausted during pagination');
-          break;
-        }
-
-        actualRequestsCount++;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response: any = await tennisApiClient.getResults(targetDate, pageNo, 500);
+        let results: any[] = [];
 
-        const results = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response?.results)
-          ? response.results
-          : Array.isArray(response?.data?.results)
-          ? response.data.results
-          : [];
+        if (customResultsData) {
+          // Custom / fixture data mode (no external provider request)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data: any = customResultsData;
+          results = Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.results)
+            ? data.results
+            : Array.isArray(data?.data?.results)
+            ? data.data.results
+            : Array.isArray(data)
+            ? data
+            : [];
+          hasNextPage = false;
+        } else {
+          if (!(await this.checkBudget())) {
+            console.log('[MatchSync] Budget exhausted during pagination');
+            break;
+          }
 
-        hasNextPage = response?.hasNextPage === true || response?.data?.hasNextPage === true;
+          actualRequestsCount++;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const response: any = await tennisApiClient.getResults(targetDate, pageNo, 500);
+
+          results = Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.results)
+            ? response.results
+            : Array.isArray(response?.data?.results)
+            ? response.data.results
+            : [];
+
+          hasNextPage = response?.hasNextPage === true || response?.data?.hasNextPage === true;
+          if (!customResultsData && hasNextPage) {
+            console.warn('[MatchSync] Additional page exists but stopping pagination to strictly enforce quota limit (1 request max).');
+            hasNextPage = false;
+          }
+        }
 
         for (const result of results) {
           totalProcessed++;
@@ -282,15 +352,16 @@ export class MatchSyncService {
             continue;
           }
 
-          const existing = await matchRepository.findByExternalId(externalMatchId);
-          if (existing) {
-            totalSkipped++;
-            continue;
-          }
-
           const p1ExternalId = Number(result.player1.id);
           const p2ExternalId = Number(result.player2.id);
 
+          // OR RULE: Keep match if AT LEAST ONE player belongs to Current Top 100
+          if (!shouldTrackSinglesMatch(p1ExternalId, p2ExternalId, currentTop100ExternalIds)) {
+            totalIgnoredOutsideTop100++;
+            continue;
+          }
+
+          // Opponents outside Top 100 are created/reused as minimal profiles without full enrichment
           const p1 = await playerRepository.upsertFromExternal(p1ExternalId, {
             externalId: p1ExternalId,
             name: p1Name,
@@ -343,7 +414,8 @@ export class MatchSyncService {
           const bestOf = result.best_of ? Number(result.best_of) : null;
           const matchDate = result.date ? new Date(result.date) : new Date(targetDate);
 
-          const match = await matchRepository.createMatch({
+          // Idempotent upsert: converges whether incoming from results or backfill
+          const match = await matchRepository.upsertMatch(externalMatchId, {
             externalMatchId,
             tournament: tournamentDbId ? { connect: { id: tournamentDbId } } : undefined,
             matchDate,
@@ -360,7 +432,26 @@ export class MatchSyncService {
 
           totalInserted++;
 
-          if (tourObj?.id) {
+          // Embedded match stats extraction if present in results
+          const statsContainer = result.stat || result.stats || result.statistics || result.playerStats;
+          const p1StatsRaw = result.player1Stats || statsContainer?.player1 || (Array.isArray(statsContainer) ? statsContainer[0] : null);
+          const p2StatsRaw = result.player2Stats || statsContainer?.player2 || (Array.isArray(statsContainer) ? statsContainer[1] : null);
+
+          if (p1StatsRaw) {
+            const norm1 = normalizeMatchPlayerStats(p1StatsRaw, p2StatsRaw);
+            if (norm1) {
+              await matchRepository.upsertMatchPlayerStat(match.id, p1.id, norm1);
+            }
+          }
+
+          if (p2StatsRaw) {
+            const norm2 = normalizeMatchPlayerStats(p2StatsRaw, p1StatsRaw);
+            if (norm2) {
+              await matchRepository.upsertMatchPlayerStat(match.id, p2.id, norm2);
+            }
+          }
+
+          if (tourObj?.id && !p1StatsRaw && !p2StatsRaw) {
             await syncRepository.createJobIfNeeded(
               SyncJobType.MATCH_STATS,
               `${externalMatchId}`,
@@ -380,12 +471,20 @@ export class MatchSyncService {
         pageNo++;
       }
 
-      console.log(`[MatchSync] Completed: processed=${totalProcessed}, inserted=${totalInserted}, skipped=${totalSkipped}, requestsUsed=${actualRequestsCount}`);
+      console.log(`[MatchSync] Completed: processed=${totalProcessed}, inserted=${totalInserted}, ignoredOutsideTop100=${totalIgnoredOutsideTop100}, skipped=${totalSkipped}, requestsUsed=${actualRequestsCount}`);
       await syncRepository.updateJob(job.id, { 
         status: SyncJobStatus.COMPLETED, 
         finishedAt: new Date(),
         requestsUsed: actualRequestsCount,
       });
+
+      return {
+        processed: totalProcessed,
+        inserted: totalInserted,
+        ignoredOutsideTop100: totalIgnoredOutsideTop100,
+        skipped: totalSkipped,
+        requestsUsed: actualRequestsCount,
+      };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       console.error('[MatchSync] Failed:', message);
