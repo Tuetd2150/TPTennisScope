@@ -22,26 +22,93 @@ export class PlayerRepository {
     });
   }
 
-  async upsertFromExternal(externalId: number, data: Prisma.PlayerCreateInput) {
-    return prisma.player.upsert({
+  /**
+   * Precedence #1: Upsert player identity from authoritative Ranking provider payload.
+   * Ranking country takes precedence over unverified data, but preserves existing
+   * non-null countryCode if ranking payload does not supply one.
+   */
+  async upsertFromRanking(
+    externalId: number,
+    data: { name: string; countryCode?: string | null }
+  ) {
+    const existing = await prisma.player.findUnique({
       where: { externalId },
-      create: data,
-      update: {
+      select: { id: true, countryCode: true },
+    });
+
+    const finalCountry = data.countryCode || existing?.countryCode || null;
+
+    if (!existing) {
+      return prisma.player.create({
+        data: {
+          externalId,
+          name: data.name,
+          countryCode: finalCountry,
+        },
+      });
+    }
+
+    return prisma.player.update({
+      where: { externalId },
+      data: {
         name: data.name,
-        countryCode: data.countryCode,
+        ...(finalCountry ? { countryCode: finalCountry } : {}),
+      },
+    });
+  }
+
+  /**
+   * Precedence #4 / Minimal Opponents:
+   * Minimal Match/Results data MUST NOT overwrite an existing trusted non-null countryCode.
+   * Only assigns countryCode if the player record currently has NO countryCode (null).
+   */
+  async upsertFromExternal(externalId: number, data: Prisma.PlayerCreateInput) {
+    const existing = await prisma.player.findUnique({
+      where: { externalId },
+      select: { id: true, countryCode: true },
+    });
+
+    if (!existing) {
+      return prisma.player.create({
+        data,
+      });
+    }
+
+    // Never overwrite an existing trusted countryCode with minimal match data
+    const shouldUpdateCountry = !existing.countryCode && Boolean(data.countryCode);
+
+    return prisma.player.update({
+      where: { externalId },
+      data: {
+        name: data.name,
+        ...(shouldUpdateCountry ? { countryCode: data.countryCode } : {}),
         // Don't overwrite detailed profile fields with minimal data
       },
     });
   }
 
+  /**
+   * Precedence #2: Upsert detailed Profile from Profile provider payload.
+   * Uses authoritative profile country if present; otherwise preserves existing trusted countryCode.
+   */
   async upsertFullProfile(externalId: number, data: Prisma.PlayerCreateInput) {
+    const existing = await prisma.player.findUnique({
+      where: { externalId },
+      select: { id: true, countryCode: true },
+    });
+
+    const finalCountry = data.countryCode || existing?.countryCode || null;
+
     return prisma.player.upsert({
       where: { externalId },
-      create: data,
+      create: {
+        ...data,
+        countryCode: finalCountry,
+      },
       update: {
         name: data.name,
         birthday: data.birthday,
-        countryCode: data.countryCode,
+        countryCode: finalCountry,
         turnedPro: data.turnedPro,
         heightCm: data.heightCm,
         weightKg: data.weightKg,

@@ -13,6 +13,7 @@ import {
   parseHeight,
   parseWeight,
 } from '../../utils/tennisStats';
+import { normalizeCountryCode } from '../../utils/country';
 
 export class ProfileSyncService extends SyncService {
   async syncPlayerProfile(
@@ -106,10 +107,12 @@ export class ProfileSyncService extends SyncService {
             ? new Date(profile.birthday)
             : null,
 
-          countryCode:
+          countryCode: normalizeCountryCode(
             profile.countryAcr ??
             profile.country?.acronym ??
-            null,
+            profile.country?.nameCode ??
+            profile.country?.id
+          ),
 
           turnedPro,
 

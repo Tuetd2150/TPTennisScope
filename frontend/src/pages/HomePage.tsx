@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { getRankings } from '../api/rankings';
 import { PlayerAvatar } from '../components/PlayerAvatar';
-import { CountryFlag } from '../components/CountryFlag';
+import { CountryBadge } from '../components/CountryBadge';
 import { Skeleton, TableSkeleton, CardSkeleton } from '../components/Skeleton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
@@ -57,7 +57,7 @@ export function HomePage() {
                   <div className="text-accent font-mono text-sm mb-1">Rank #1</div>
                   <h3 className="text-2xl font-bold text-text-primary group-hover:text-accent transition-colors">{numberOne.player.name}</h3>
                   <div className="flex items-center gap-2 text-text-secondary mt-1">
-                    <CountryFlag countryCode={numberOne.player.countryCode} showCode />
+                    <CountryBadge countryCode={numberOne.player.countryCode} showCode flagSize="md" />
                     <span>•</span>
                     <span>{numberOne.points.toLocaleString()} pts</span>
                   </div>
@@ -104,7 +104,7 @@ export function HomePage() {
                                 {entry.player.name}
                               </span>
                               <div className="text-xs text-text-secondary mt-0.5">
-                                <CountryFlag countryCode={entry.player.countryCode} showCode />
+                                <CountryBadge countryCode={entry.player.countryCode} showCode flagSize="sm" />
                               </div>
                             </div>
                           </Link>

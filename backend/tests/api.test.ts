@@ -9,10 +9,16 @@ describe('API Endpoints', () => {
     expect(res.body.status).toBe('ok');
   });
 
-  it('GET /api/rankings should return 200 (even if empty)', async () => {
+  it('GET /api/rankings should return 200 and serve accurate country codes', async () => {
     const res = await request(app).get('/api/rankings');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+    if (res.body.length > 0) {
+      const rank1 = res.body[0];
+      if (rank1.player?.externalId === 24008) {
+        expect(rank1.player.countryCode).toBe('GER');
+      }
+    }
   });
 
   it('GET /api/players/999999 should return 404', async () => {

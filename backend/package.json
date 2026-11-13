@@ -17,7 +17,8 @@
     "sync:matches": "tsx src/scripts/syncMatches.ts",
     "sync:profiles": "tsx src/scripts/syncProfiles.ts",
     "sync:backfill": "tsx src/scripts/backfill.ts",
-    "enrich:rank1": "tsx src/scripts/enrichRank1.ts"
+    "enrich:rank1": "tsx src/scripts/enrichRank1.ts",
+    "avatars:top100": "tsx src/scripts/syncAvatars.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

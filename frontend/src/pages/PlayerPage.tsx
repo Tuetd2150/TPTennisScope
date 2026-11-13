@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { getPlayer, getPlayerSeasonStats, getPlayerMatches } from '../api/players';
 import { getRankingHistory } from '../api/rankings';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { CountryBadge } from '../components/CountryBadge';
 import { CountryFlag } from '../components/CountryFlag';
 import { StatCard } from '../components/StatCard';
 import { SurfaceBadge } from '../components/SurfaceBadge';
@@ -267,6 +268,7 @@ export function PlayerPage() {
                               <Link to={`/players/${opponent.id}`} className="flex items-center gap-2 hover:text-accent transition-colors">
                                 <PlayerAvatar name={opponent.name} imagePath={opponent.imagePath} size="sm" />
                                 <span>{opponent.name}</span>
+                                <CountryBadge countryCode={opponent.countryCode} flagSize="sm" showCode />
                               </Link>
                             </td>
                             <td className="px-4 py-3 font-bold">

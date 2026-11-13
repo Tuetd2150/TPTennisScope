@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { getRankings } from '../api/rankings';
 import { PlayerAvatar } from '../components/PlayerAvatar';
-import { CountryFlag } from '../components/CountryFlag';
+import { CountryBadge } from '../components/CountryBadge';
 import { TableSkeleton } from '../components/Skeleton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
@@ -84,7 +84,7 @@ export function RankingsPage() {
                             {entry.player.name}
                           </div>
                           <div className="text-xs text-text-secondary mt-1">
-                            <CountryFlag countryCode={entry.player.countryCode} showCode />
+                            <CountryBadge countryCode={entry.player.countryCode} showCode flagSize="sm" />
                           </div>
                         </div>
                       </div>

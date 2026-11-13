@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { getRankings } from '../api/rankings';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { CountryBadge } from '../components/CountryBadge';
 
 export function PlayerSearch({ label, value, onChange, disabledId }: { label: string; value: number | null; onChange: (id: number) => void; disabledId?: number | null }) {
   const { data: rankings } = useApi(getRankings);
@@ -27,6 +28,7 @@ export function PlayerSearch({ label, value, onChange, disabledId }: { label: st
           <div className="flex items-center gap-3">
             <PlayerAvatar name={selectedPlayer.name} imagePath={selectedPlayer.imagePath} size="sm" />
             <span className="font-semibold text-text-primary">{selectedPlayer.name}</span>
+            <CountryBadge countryCode={selectedPlayer.countryCode} flagSize="sm" showCode />
           </div>
           <span className="text-xs text-text-secondary">Change</span>
         </div>
@@ -56,7 +58,10 @@ export function PlayerSearch({ label, value, onChange, disabledId }: { label: st
                 >
                   <PlayerAvatar name={r.player.name} imagePath={r.player.imagePath} size="sm" />
                   <div>
-                    <div className="font-medium">{r.player.name}</div>
+                    <div className="font-medium flex items-center gap-2">
+                      <span>{r.player.name}</span>
+                      <CountryBadge countryCode={r.player.countryCode} flagSize="sm" showCode />
+                    </div>
                     <div className="text-xs text-text-secondary">Rank #{r.rank}</div>
                   </div>
                 </div>

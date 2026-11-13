@@ -4,6 +4,7 @@ import { rankingRepository } from '../rankings/ranking.repository';
 import { playerRepository } from '../players/player.repository';
 import { syncRepository } from './sync.repository';
 import { SyncJobType, SyncJobStatus } from '@prisma/client';
+import { normalizeCountryCode } from '../../utils/country';
 
 export interface RankingMembershipChange {
   entered: number[]; // externalIds of players entering Top 100
@@ -117,12 +118,24 @@ export class RankingSyncService extends SyncService {
         const dateStr = item.date ?? item.rankingDate ?? rankingsData?.rankingDate;
         rankingDate = new Date(dateStr);
 
-        // Upsert / reuse player identity
-        const player = await playerRepository.upsertFromExternal(
+        const rawCountry =
+          item.player?.countryAcr ??
+          item.player?.country?.acronym ??
+          item.player?.country?.nameCode ??
+          item.player?.country?.id ??
+          item.countryAcr ??
+          item.country?.acronym ??
+          item.country?.nameCode ??
+          item.country?.id ??
+          null;
+        const countryCode = normalizeCountryCode(rawCountry);
+
+        // Precedence #1: Upsert / reuse player identity from authoritative Ranking payload
+        const player = await playerRepository.upsertFromRanking(
           externalId,
           {
-            externalId,
             name,
+            countryCode,
           }
         );
 
@@ -145,6 +158,13 @@ export class RankingSyncService extends SyncService {
             SyncJobType.PLAYER_PROFILE,
             player.externalId.toString(),
             undefined,
+            30
+          );
+          // Queue avatar sync job for newly entered player
+          await syncRepository.createJobIfNeeded(
+            SyncJobType.PLAYER_IMAGE,
+            player.externalId.toString(),
+            { rank: position, name: player.name },
             30
           );
         } else if (stayedSet.has(externalId)) {
@@ -177,6 +197,9 @@ export class RankingSyncService extends SyncService {
       console.log(
         `[RankingSync] Successfully synced ${syncedCount} players. Changes: entered=${changes.entered.length}, stayed=${changes.stayed.length}, left=${changes.left.length}`
       );
+
+      // Note: Automatic avatar downloading for ENTERED players is paused/feature-gated
+      // pending validation of a working remote avatar source. Jobs remain safely PENDING.
 
       return {
         rankingDate,
