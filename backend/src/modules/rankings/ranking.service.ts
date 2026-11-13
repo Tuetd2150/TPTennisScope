@@ -1,10 +1,18 @@
 import { rankingRepository } from './ranking.repository';
 import { NotFoundError } from '../../utils/apiErrors';
+import { parseAge } from '../../utils/tennisStats';
 
 export class RankingService {
   async getRankings(limit: number = 100) {
     try {
-      return await rankingRepository.getLatestRankings(limit);
+      const rankings = await rankingRepository.getLatestRankings(limit);
+      return rankings.map((item) => ({
+        ...item,
+        player: {
+          ...item.player,
+          age: parseAge(item.player.birthday),
+        },
+      }));
     } catch (error) {
       console.warn('[RankingService] DB query failed, returning empty rankings list:', (error as Error).message);
       return [];

@@ -65,15 +65,16 @@ Không gọi endpoint đã có dữ liệu complete nếu task không yêu cầu
 
 Nếu required requests vượt hard cap/quota, dừng trước network thay vì làm player dở dang.
 
-### 4. Profile
+### 4. Profile & Country Fallback
 
-Chỉ sync Profile nếu cần.
+RapidAPI là single source of truth cho toàn bộ dữ liệu:
 
-Không dùng Profile `currentRank`/points để ghi đè ranking authoritative.
-
-Giữ image fallback hiện tại nếu provider image không khả dụng.
-
-Không scrape ảnh ngoài provider nếu task không yêu cầu.
+- Chỉ sync Profile nếu player còn thiếu metadata hoặc thiếu `countryCode`.
+- **Country Fallback**: Khi Ranking payload không cung cấp quốc gia, Profile endpoint là authoritative fallback (Precedence #2).
+- Nếu Profile endpoint cũng không có country: giữ nguyên `countryCode = null` (đây là trạng thái hợp lệ của provider); **tuyệt đối không dùng birthplace để suy đoán nationality, không lấy từ Wikipedia hay ATP website**.
+- Không dùng Profile `currentRank`/points để ghi đè ranking authoritative.
+- Không cho phép minimal Match/Results payload ghi đè lên `countryCode` đã có trong database.
+- Giữ image fallback hiện tại nếu provider image không khả dụng; không tự động tải avatar nếu task không yêu cầu riêng.
 
 ### 5. Career
 

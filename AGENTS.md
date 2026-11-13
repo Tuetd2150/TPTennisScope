@@ -126,15 +126,27 @@ Không chế tạo ranking history giả.
 
 Ranking/current points authoritative phải đến từ ranking pipeline, không lấy profile/career `currentRank` hoặc points để thay thế.
 
-## 9. Provider data
+## 9. Provider Source of Truth (RapidAPI / Matchstat)
 
-Không âm thầm sửa provider data bằng ATP website hoặc nguồn khác.
+RapidAPI / Matchstat là **single source of truth** duy nhất cho toàn bộ hệ thống TennisScope.
 
-Nếu provider trả Career W-L, Titles, Tournament hoặc Stats thì giữ semantic đã được xác nhận của provider.
+Nguyên tắc bất biến (Project-wide Invariant):
 
-Không fabricate dữ liệu bị thiếu.
-
-`null` không đồng nghĩa với `0`.
+- Mọi miền dữ liệu sau đây đều bắt buộc xuất phát từ RapidAPI:
+  - rankings / ranking points;
+  - player profile / metadata;
+  - country / nationality;
+  - career statistics;
+  - titles / trophy cabinet;
+  - tournaments / surfaces;
+  - matches / results;
+  - match statistics / serve statistics;
+  - season data.
+- **Không dùng ATP website, Wikipedia, Flashscore hay bất kỳ nguồn ngoài nào để “correct” hoặc can thiệp dữ liệu provider.**
+- TennisScope được phép tính các derived aggregates (tổng hợp phái sinh) từ dữ liệu RapidAPI đã lưu trong PostgreSQL, nhưng nguyên liệu đầu vào luôn phải là dữ liệu provider.
+- Nếu RapidAPI trả `null` hoặc missing, giữ nguyên `null`/missing đó là trạng thái hợp lệ của provider; không fabricate dữ liệu bị thiếu.
+- `null` không đồng nghĩa với `0`.
+- **Tuyệt đối không suy luận hoặc ghi đè nationality từ birthplace.** Nơi sinh không đồng nhất với quốc tịch thể thao chính thức.
 
 ## 10. Sync strategy
 

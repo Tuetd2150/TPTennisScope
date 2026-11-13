@@ -2,9 +2,20 @@
 
 > Đây là reference kỹ thuật dùng chung. Chỉ thay đổi khi có evidence mới từ provider và đã kiểm tra regression.
 
-## Provider
+## Provider Source of Truth (Single Source of Truth)
 
-RapidAPI host hiện dùng:
+RapidAPI / Matchstat (`tennis-api-atp-wta-itf.p.rapidapi.com`) là **single source of truth** duy nhất cho toàn bộ hệ thống TennisScope:
+
+- **Mọi dữ liệu tennis**: ranking, points, profile, country, career stats, titles, tournaments, matches, serve/return stats đều bắt buộc xuất phát từ provider này.
+- **Scope của Matchstat dataset**: Dataset `atp` / men's singles của provider bao gồm cả các giải cấp độ Challenger, ITF, Davis Cup (các level provider hỗ trợ). Vì vậy:
+  - Career W-L, số danh hiệu (Titles), hoặc Season aggregates có thể lớn hơn hoặc khác biệt so với số liệu thống kê chỉ tính ATP Tour main-draw trên trang web chính thức của ATP Tour.
+  - **Đây là semantic chính thức của provider, hoàn toàn bình thường và không phải là lỗi**.
+  - Tuyệt đối không can thiệp, reconcile hay chỉnh sửa bằng nguồn ngoài (ATP website, Wikipedia...).
+- **Xử lý missing/null**: Nếu provider trả `null` hoặc không có dữ liệu, TennisScope giữ nguyên `null`/missing đó là trạng thái hợp lệ. Không chế tạo số liệu giả.
+
+## RapidAPI Endpoints & Thẩm quyền
+
+Host hiện dùng:
 
 ```text
 tennis-api-atp-wta-itf.p.rapidapi.com
@@ -18,9 +29,9 @@ Không đưa API key vào tài liệu hoặc frontend.
 GET /tennis/v2/atp/ranking/singles?pageNo=1&pageSize=100
 ```
 
-Ranking endpoint là authoritative cho current rank, points và ranking date của TennisScope.
-
-Không dùng profile/career currentRank/currentPoints để ghi đè ranking authoritative.
+- Ranking endpoint là authoritative duy nhất cho current rank, points, ranking date của TennisScope.
+- Payload ranking cũng cung cấp mã quốc gia của player (`countryAcr`, `country.nameCode`, `country.acronym`) với độ bao phủ cao (Precedence #1 cho nationality).
+- Không dùng profile/career `currentRank`/`currentPoints` để ghi đè ranking authoritative.
 
 ## Daily Results
 
@@ -46,7 +57,10 @@ Không dùng daily Results để backfill lịch sử của từng player nếu 
 GET /tennis/v2/atp/player/profile/{playerId}?include=form,ranking,country
 ```
 
-Profile có thể trả image không khả dụng/404. Placeholder hiện tại là behavior hợp lệ.
+- Profile endpoint là authoritative fallback cho player metadata (ngày sinh, chiều cao, cân nặng, tay thuận, HLV...) và countryCode (Precedence #2) khi ranking payload không có.
+- Tuyệt đối không suy luận nationality từ `birthplace`.
+- Profile có thể trả image không khả dụng/404. Placeholder hiện tại là behavior hợp lệ.
+- Không tự động tải avatar nếu chưa có luồng chuyên dụng.
 
 ## Career Statistics
 

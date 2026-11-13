@@ -28,15 +28,16 @@ Ranking provider
 -> ENTERED / STAYED / LEFT
 ```
 
-## Ranking source
+## Ranking source & Country provenance
 
 Ranking endpoint là authoritative cho:
 
 - current rank;
 - current points;
-- ranking date.
+- ranking date;
+- official country / nationality (khi payload có `countryAcr`, `country.nameCode`, `country.acronym` — Precedence #1).
 
-Không lấy Profile/Career ranking field để thay thế.
+Không lấy Profile/Career ranking field để thay thế ranking authoritative.
 
 ## Current Top 100
 
@@ -51,12 +52,23 @@ Không hardcode “#3 = Carlos Alcaraz”. Rank chỉ là vị trí động.
 Khi player mới vào Current Top 100:
 
 1. reuse existing Player nếu đã từng xuất hiện như minimal opponent;
-2. update ranking state/snapshot;
-3. queue Profile/Career/Titles nếu thiếu;
-4. queue current-season catch-up/backfill nếu thiếu;
-5. không tạo duplicate Player.
+2. persist country ngay nếu Ranking payload có; nếu không có, reuse `Player.countryCode` đã có; nếu vẫn null thì queue `PLAYER_PROFILE` job để lấy country qua profile fallback;
+3. update ranking state/snapshot;
+4. queue Profile/Career/Titles nếu thiếu;
+5. queue current-season catch-up/backfill nếu thiếu;
+6. không tạo duplicate Player.
 
 Deep enrichment phải quota-aware và có thể chạy theo queue/batch, không bắt buộc đốt hết trong cùng ranking job.
+
+## Missing Country Audit sau Ranking Sync
+
+Sau mỗi lần Ranking sync hoàn thành:
+
+1. Tự động audit toàn bộ Current Top 100 xem còn player nào `countryCode === null`.
+2. Queue `PLAYER_PROFILE` reconciliation job (cooldown 7 ngày để duplicate-safe, quota-aware).
+3. Khi Profile sync chạy:
+   - Nếu Profile trả country -> persist.
+   - Nếu Profile cũng trả null -> giữ null (trạng thái hợp lệ của provider), không retry vô hạn, không lấy nguồn ngoài.
 
 ## STAYED
 

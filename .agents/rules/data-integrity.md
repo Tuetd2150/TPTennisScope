@@ -21,6 +21,26 @@ Provider-derived entities phải converge về cùng record khi sync lặp lại
 
 Không tạo duplicate chỉ vì cùng dữ liệu đi vào từ nhiều pipeline.
 
+## Provider Data Provenance & No External Correction
+
+RapidAPI / Matchstat là single source of truth cho toàn bộ dữ liệu tennis:
+- Mọi entity (Ranking, Profile, Career, Titles, Tournament, Match, Stats) đều phải đến từ provider.
+- Tuyệt đối không dùng ATP official website, Wikipedia, Flashscore hoặc bất kỳ bên thứ ba nào để "correct" hay can thiệp vào provider data.
+- Nếu provider trả `null`/missing thì giữ nguyên `null`/missing đó là trạng thái hợp lệ. Không fabricate dữ liệu giả.
+- Dữ liệu Career W-L, Titles hay Season aggregates của provider có thể bao gồm phạm vi mở rộng (Challenger/ITF) dẫn đến khác biệt với ATP Tour official; đây là đặc tính của provider dataset, không được xem là lỗi cần sửa bằng nguồn ngoài.
+
+## Country Precedence & Birthplace Invariance
+
+Thứ tự ưu tiên thẩm quyền cho `Player.countryCode`:
+1. Authoritative country từ Ranking provider payload (`countryAcr`, `country.nameCode`, `country.acronym`).
+2. Authoritative country từ Profile provider payload.
+3. Existing trusted non-null `countryCode` đã được lưu trong DB.
+4. `null` / unknown (hiển thị UI `neutral flag + —`).
+
+Quy tắc cấm kỵ:
+- **Tuyệt đối không dùng birthplace để suy luận hay ghi đè quốc tịch / countryCode.** Nơi sinh không đồng nhất với quốc tịch thể thao chính thức của VĐV.
+- Minimal Match/Results data KHÔNG ĐƯỢC PHÉP ghi đè lên `countryCode` đã tồn tại của player.
+
 ## Player identity
 
 Provider identity dùng `Player.externalId`.

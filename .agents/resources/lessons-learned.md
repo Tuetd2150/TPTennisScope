@@ -171,3 +171,25 @@ Bài học: cần cả hai lớp:
 mock test -> chứng minh logic nội bộ
 live test -> chứng minh integration với provider thật
 ```
+
+## 19. Không suy luận quốc tịch từ nơi sinh (Birthplace != Nationality)
+
+Nơi sinh (`birthplace`) và quốc tịch thể thao chính thức (`countryCode`) là hai khái niệm hoàn toàn khác nhau.
+- Nhiều tay vợt sinh ra tại một quốc gia nhưng thi đấu chính thức dưới màu cờ của quốc gia khác.
+- Việc dùng birthplace để suy đoán hoặc ghi đè quốc tịch sẽ phá vỡ tính toàn vẹn của dữ liệu provider.
+- Bài học: Luôn lấy nationality trực tiếp từ authoritative payload (`country`, `countryAcr`, `country.nameCode`) của Ranking hoặc Profile. Nếu provider trả null, giữ null; không đoán.
+
+## 20. Không dùng Unicode emoji flag trên Windows / Chrome
+
+Windows và Google Chrome không hỗ trợ font color emoji cho regional flags, tự động phân rã Unicode flag emoji thành 2 chữ cái Latinh in hoa (`DE`, `IT`, `ES`), gây ra lỗi giao diện `DE GER`, `IT ITA`, `ES ESP`.
+- Bài học: Không dùng Unicode flag emojis. Dùng vector SVG assets (`flag-icons` chuẩn tỉ lệ 4:3) kết hợp ánh xạ nội bộ mã IOC/ATP 3 chữ sang ISO-2 (`GER` -> `de`).
+- Mã ISO-2 chỉ dùng nội bộ để chọn CSS class SVG, tuyệt đối không render text ISO-2 ra ngoài UI.
+- Fallback khi thiếu country: dùng SVG neutral vector flag + `—`.
+
+## 21. Sự cố Alexander Zverev (ITA -> GER): Root cause & Clean fix
+
+Alexander Zverev từng bị hiển thị `ITA` do một bản ghi minimal match đối đầu trong quá khứ ghi đè vào.
+- Bài học:
+  1. Fix bằng targeted data repair đúng record bị ảnh hưởng, không viết logic runtime vá riêng cho một player (`if Zverev -> GER`).
+  2. Bổ sung generic guard ở repository layer: Minimal Match/Results data tuyệt đối không được phép ghi đè `countryCode` đã có của player.
+  3. Precedence thẩm quyền: Ranking provider payload > Profile provider payload > Existing trusted DB data > null.

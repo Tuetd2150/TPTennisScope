@@ -17,6 +17,8 @@ describe('API Endpoints', () => {
       const rank1 = res.body[0];
       if (rank1.player?.externalId === 24008) {
         expect(rank1.player.countryCode).toBe('GER');
+        expect(typeof rank1.player.age).toBe('number');
+        expect(rank1.player.age).toBeGreaterThan(20);
       }
     }
   });

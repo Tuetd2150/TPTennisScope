@@ -3,6 +3,7 @@ import { tennisApiClient } from '../../clients/tennisApi.client';
 import { rankingRepository } from '../rankings/ranking.repository';
 import { playerRepository } from '../players/player.repository';
 import { syncRepository } from './sync.repository';
+import { prisma } from '../../config/database';
 import { SyncJobType, SyncJobStatus } from '@prisma/client';
 import { normalizeCountryCode } from '../../utils/country';
 
@@ -108,6 +109,7 @@ export class RankingSyncService extends SyncService {
       const stayedSet = new Set(changes.stayed);
 
       let syncedCount = 0;
+      let rankingPayloadCountryCount = 0;
       let rankingDate = new Date();
 
       for (const item of validRankings) {
@@ -129,6 +131,9 @@ export class RankingSyncService extends SyncService {
           item.country?.id ??
           null;
         const countryCode = normalizeCountryCode(rawCountry);
+        if (countryCode) {
+          rankingPayloadCountryCount++;
+        }
 
         // Precedence #1: Upsert / reuse player identity from authoritative Ranking payload
         const player = await playerRepository.upsertFromRanking(
@@ -197,6 +202,66 @@ export class RankingSyncService extends SyncService {
       console.log(
         `[RankingSync] Successfully synced ${syncedCount} players. Changes: entered=${changes.entered.length}, stayed=${changes.stayed.length}, left=${changes.left.length}`
       );
+      console.log(
+        `[RankingSync] Country coverage from ranking payload: ${rankingPayloadCountryCount}/${syncedCount}`
+      );
+
+      // Audit Current Top 100 for players still missing countryCode
+      // Queue PLAYER_PROFILE job if missing country, cooldown-safe & duplicate-safe
+      const missingCountryPlayers = await prisma.player.findMany({
+        where: {
+          countryCode: null,
+          rankings: {
+            some: {
+              rankingDate,
+              rank: { lte: 100 },
+            },
+          },
+        },
+        select: { externalId: true, name: true },
+      });
+
+      if (missingCountryPlayers.length > 0) {
+        console.log(
+          `[RankingSync] Audited ${missingCountryPlayers.length} Top 100 players missing countryCode. Ensuring profile reconciliation jobs are queued.`
+        );
+        for (const p of missingCountryPlayers) {
+          await syncRepository.createJobIfNeeded(
+            SyncJobType.PLAYER_PROFILE,
+            p.externalId.toString(),
+            { reason: 'MISSING_COUNTRY' },
+            7
+          );
+        }
+      }
+
+      // Audit Current Top 100 for players missing birthday / profile
+      const missingBirthdayPlayers = await prisma.player.findMany({
+        where: {
+          birthday: null,
+          rankings: {
+            some: {
+              rankingDate,
+              rank: { lte: 100 },
+            },
+          },
+        },
+        select: { externalId: true, name: true },
+      });
+
+      if (missingBirthdayPlayers.length > 0) {
+        console.log(
+          `[RankingSync] Audited ${missingBirthdayPlayers.length} Top 100 players missing birthday. Ensuring profile reconciliation jobs are queued.`
+        );
+        for (const p of missingBirthdayPlayers) {
+          await syncRepository.createJobIfNeeded(
+            SyncJobType.PLAYER_PROFILE,
+            p.externalId.toString(),
+            { reason: 'MISSING_BIRTHDAY' },
+            7
+          );
+        }
+      }
 
       // Note: Automatic avatar downloading for ENTERED players is paused/feature-gated
       // pending validation of a working remote avatar source. Jobs remain safely PENDING.
