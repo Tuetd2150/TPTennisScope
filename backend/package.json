@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "build": "prisma generate && tsc",
+    "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/ --ext .ts",
     "test": "vitest run",
@@ -20,7 +20,8 @@
     "enrich:rank1": "tsx src/scripts/enrichRank1.ts",
     "avatars:top100": "tsx src/scripts/syncAvatars.ts",
     "sync:countries": "tsx src/scripts/reconcileCountries.ts",
-    "sync:profiles:top100": "tsx src/scripts/syncTop100Profiles.ts"
+    "sync:profiles:top100": "tsx src/scripts/syncTop100Profiles.ts",
+    "db:verify": "tsx src/scripts/verifyDbIntegrity.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

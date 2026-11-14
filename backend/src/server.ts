@@ -8,8 +8,10 @@ const server = app.listen(env.PORT, () => {
   console.log(`   Frontend origin: ${env.FRONTEND_ORIGIN}`);
   console.log(`   API configured: ${!!env.RAPIDAPI_KEY}`);
   
-  if (env.NODE_ENV !== 'test') {
+  if (env.NODE_ENV !== 'test' && env.ENABLE_LOCAL_SCHEDULER) {
     initScheduler();
+  } else if (!env.ENABLE_LOCAL_SCHEDULER) {
+    console.log('   Local scheduler: DISABLED (ENABLE_LOCAL_SCHEDULER=false)');
   }
 });
 

@@ -256,3 +256,14 @@ Trước commit/push:
 Không tự dùng `reset --hard`, `clean -fd`, rebase/amend hoặc force push.
 
 Khi user yêu cầu commit/push, ưu tiên skill `tennisscope-git-finish` và tuân thủ `.agents/rules/git-safety.md`.
+
+## 18. Vercel Serverless & Production Deployment Invariants
+
+- **2 Vercel Projects độc lập**: Frontend Web (`tennisscope-web`) và Backend API (`tennisscope-api`).
+- **RapidAPI là Single Source of Truth**: Dữ liệu trên Cloud PostgreSQL bắt buộc xuất phát từ RapidAPI; không dùng nguồn ngoài để can thiệp.
+- **Production Cron tách biệt**: Production cron sử dụng Vercel Cron (`/api/cron/*`), không được chạy `node-cron` bên trong Vercel Functions.
+- **No Double Scheduler**: Tuyệt đối không để local scheduler và Vercel scheduler cùng hoạt động song song. Quản lý an toàn bằng `ENABLE_LOCAL_SCHEDULER` và `ENABLE_PRODUCTION_CRON`.
+- **Serverless Anti-Overlap DB Lock**: Chống chạy trùng lặp trên serverless phải dùng database-backed lock (PostgreSQL `pg_try_advisory_lock`), không dựa vào boolean in-memory lock.
+- **Bảo tồn API_USAGE khi migrate**: Di chuyển dữ liệu lên Cloud PostgreSQL bắt buộc bảo tồn các bản ghi `API_USAGE` trong `SyncJob` của ngày hiện tại để tránh reset quota về 0.
+- **Preview Deployments Gate**: Mọi deploy dạng preview/staging (`VERCEL_ENV != 'production'`) bị cấm gọi RapidAPI live sync.
+- **Avatar Storage Caveat**: Filesystem của Vercel Serverless Function không có tính bền vững (non-persistent); task avatar vẫn PAUSED cho đến khi tích hợp Cloud Object Storage riêng.

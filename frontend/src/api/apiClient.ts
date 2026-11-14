@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+/**
+ * Normalizes the API base URL to ensure clean, consistent routing.
+ * - Empty/undefined defaults to '/api' (Vite proxy in local dev).
+ * - Strips trailing slashes.
+ * - Guarantees the path ends with '/api' without duplicate '/api/api'.
+ */
+export function buildApiBaseUrl(rawUrl?: string): string {
+  if (!rawUrl || rawUrl.trim() === '') {
+    return '/api';
+  }
+
+  const trimmed = rawUrl.trim().replace(/\/+$/, '');
+
+  if (trimmed === '/api' || trimmed.endsWith('/api')) {
+    return trimmed;
+  }
+
+  return `${trimmed}/api`;
+}
+
+const API_BASE_URL = buildApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
