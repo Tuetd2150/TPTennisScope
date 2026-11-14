@@ -45,11 +45,11 @@ export class SyncRepository {
     });
   }
 
-  async getApiRequestsUsed(dateKey: string): Promise<number> {
+  async getApiRequestsUsed(quotaKey: string): Promise<number> {
     const result = await prisma.syncJob.aggregate({
       where: {
         type: SyncJobType.API_USAGE,
-        targetKey: dateKey,
+        targetKey: quotaKey,
       },
       _sum: {
         requestsUsed: true,
@@ -122,15 +122,15 @@ export class SyncRepository {
   }
 
   async reserveApiRequest(
-  dateKey: string,
-  path: string,
-  attempt: number,
-  dailyBudget: number
+    quotaKey: string,
+    path: string,
+    attempt: number,
+    dailyBudget: number
   ): Promise<number | null> {
     return prisma.$transaction(async (tx) => {
-      const lockKey = `tennisscope-api-quota:${dateKey}`;
+      const lockKey = `tennisscope-api-quota:${quotaKey}`;
 
-      // Only one quota reservation for this date can run at a time.
+      // Only one quota reservation for this quota window can run at a time.
       await tx.$queryRaw<Array<{ locked: number }>>`
       WITH quota_lock AS MATERIALIZED (
         SELECT pg_advisory_xact_lock(hashtext(${lockKey}))
@@ -142,7 +142,7 @@ export class SyncRepository {
       const result = await tx.syncJob.aggregate({
         where: {
           type: SyncJobType.API_USAGE,
-          targetKey: dateKey,
+          targetKey: quotaKey,
         },
         _sum: {
           requestsUsed: true,
@@ -161,7 +161,7 @@ export class SyncRepository {
         data: {
           type: SyncJobType.API_USAGE,
           status: SyncJobStatus.COMPLETED,
-          targetKey: dateKey,
+          targetKey: quotaKey,
           requestsUsed: 1,
           payload: {
             path,

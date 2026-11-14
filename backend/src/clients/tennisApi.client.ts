@@ -10,6 +10,7 @@ import {
 } from '../utils/apiErrors';
 
 import { syncRepository } from '../modules/sync/sync.repository';
+import { getQuotaWindowKey } from '../utils/quotaWindow';
 
 const RETRYABLE_STATUS = new Set([
   500,
@@ -34,32 +35,21 @@ class TennisApiClient {
     });
   }
 
+  /**
+   * Returns the canonical key for the current RapidAPI quota period.
+   * Resets at RAPIDAPI_QUOTA_RESET_UTC (default 08:23 UTC / 15:23 Asia/Ho_Chi_Minh).
+   */
+  public getCurrentQuotaKey(): string {
+    return getQuotaWindowKey();
+  }
+
   private getTodayKey(): string {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: env.SYNC_TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).formatToParts(new Date());
-
-    const year = parts.find(
-      part => part.type === 'year'
-    )?.value;
-
-    const month = parts.find(
-      part => part.type === 'month'
-    )?.value;
-
-    const day = parts.find(
-      part => part.type === 'day'
-    )?.value;
-
-    return `${year}-${month}-${day}`;
+    return this.getCurrentQuotaKey();
   }
 
   public async getTodayRequestCount(): Promise<number> {
     return syncRepository.getApiRequestsUsed(
-      this.getTodayKey()
+      this.getCurrentQuotaKey()
     );
   }
 
@@ -84,12 +74,12 @@ class TennisApiClient {
   }
 
   private async reserveRequest(
-  path: string,
-  attempt: number
+    path: string,
+    attempt: number
   ): Promise<number> {
     const remaining =
       await syncRepository.reserveApiRequest(
-        this.getTodayKey(),
+        this.getCurrentQuotaKey(),
         path,
         attempt,
         env.DAILY_API_REQUEST_BUDGET

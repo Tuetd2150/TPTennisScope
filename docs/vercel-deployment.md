@@ -52,6 +52,7 @@ Tại tab **Environment Variables**, thêm các biến sau:
 | `FRONTEND_ORIGINS` | `https://tennisscope-web.vercel.app,http://localhost:5173` | Hỗ trợ nhiều origin |
 | `SYNC_TIMEZONE` | `Asia/Ho_Chi_Minh` | Múi giờ chuẩn nghiệp vụ |
 | `DAILY_API_REQUEST_BUDGET` | `45` | Hạn ngạch API bảo vệ quota |
+| `RAPIDAPI_QUOTA_RESET_UTC` | `08:23` | Thời điểm reset quota RapidAPI (08:23 UTC / 15:23 HCM) |
 | `CRON_SECRET` | *(Chuỗi ngẫu nhiên bảo mật 32+ ký tự)* | Token bảo vệ `/api/cron/*` |
 | `ENABLE_LOCAL_SCHEDULER` | `false` | **Bắt buộc false** trên Vercel |
 | `ENABLE_PRODUCTION_CRON` | `false` *(Ban đầu)* | **Chỉ bật true sau khi hoàn tất migrate DB** |

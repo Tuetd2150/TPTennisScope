@@ -11,6 +11,10 @@ const envSchema = z.object({
   FRONTEND_ORIGINS: z.string().optional(),
   SYNC_TIMEZONE: z.string().default('Asia/Ho_Chi_Minh'),
   DAILY_API_REQUEST_BUDGET: z.coerce.number().default(45),
+  RAPIDAPI_QUOTA_RESET_UTC: z
+    .string()
+    .default('08:23')
+    .transform((val) => val.trim()),
   CRON_SECRET: z.string().optional(),
   ENABLE_LOCAL_SCHEDULER: z
     .string()

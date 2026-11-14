@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import { parseAge } from '../utils/tennisStats';
+import { getQuotaWindowKey } from '../utils/quotaWindow';
 
 export interface DbIntegrityReport {
   timestamp: string;
@@ -88,19 +89,30 @@ export async function runDbIntegrityCheck(): Promise<DbIntegrityReport> {
   const totalTitles = await prisma.playerTitle.count();
   const totalSyncJobs = await prisma.syncJob.count();
 
-  // 4. API_USAGE today
+  // 4. API_USAGE today (calendar day and RapidAPI quota window)
   const todayKey = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
   }).format(new Date());
 
-  const apiUsageResult = await prisma.syncJob.aggregate({
+  const currentWindowKey = getQuotaWindowKey();
+
+  const calendarUsageResult = await prisma.syncJob.aggregate({
     where: {
       type: 'API_USAGE',
       targetKey: todayKey,
     },
     _sum: { requestsUsed: true },
   });
-  const todayApiUsageRequests = apiUsageResult._sum.requestsUsed ?? 0;
+  const todayApiUsageRequests = calendarUsageResult._sum.requestsUsed ?? 0;
+
+  const windowUsageResult = await prisma.syncJob.aggregate({
+    where: {
+      type: 'API_USAGE',
+      targetKey: currentWindowKey,
+    },
+    _sum: { requestsUsed: true },
+  });
+  const currentWindowRequests = windowUsageResult._sum.requestsUsed ?? 0;
 
   // 5. Pending jobs
   const pendingSyncJobs = await prisma.syncJob.count({
@@ -224,7 +236,7 @@ export async function runDbIntegrityCheck(): Promise<DbIntegrityReport> {
   console.log(`Matches: ${totalMatches}`);
   console.log(`MatchPlayerStats: ${totalMatchPlayerStats}`);
   console.log(`CareerStats: ${totalCareerStats}, Titles: ${totalTitles}`);
-  console.log(`SyncJobs: ${totalSyncJobs} (Today API_USAGE: ${todayApiUsageRequests} reqs, Pending: ${pendingSyncJobs})`);
+  console.log(`SyncJobs: ${totalSyncJobs} (Window [${currentWindowKey}] API_USAGE: ${currentWindowRequests} reqs, Calendar Today: ${todayApiUsageRequests} reqs, Pending: ${pendingSyncJobs})`);
   console.log('\n--- Golden Sanity Checks ---');
   console.log('Zverev:', goldenChecks.zverev);
   console.log('Sinner:', goldenChecks.sinner);
