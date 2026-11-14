@@ -71,4 +71,3 @@ export const POST = handleSchedule(async (metadata) => {
   await runScheduledRanking();
 });
 
-export default POST;

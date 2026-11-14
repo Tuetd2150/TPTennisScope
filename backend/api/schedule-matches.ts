@@ -71,4 +71,3 @@ export const POST = handleSchedule(async (metadata) => {
   await runScheduledMatches();
 });
 
-export default POST;

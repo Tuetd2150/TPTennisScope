@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as rankingScheduleModule from '../api/schedule-ranking';
+import * as matchScheduleModule from '../api/schedule-matches';
+import * as profileScheduleModule from '../api/schedule-profile-reconcile';
 import { runScheduledRanking, POST as rankingHandler } from '../api/schedule-ranking';
 import { runScheduledMatches, POST as matchHandler } from '../api/schedule-matches';
 import { runScheduledProfileReconcile, POST as profileHandler } from '../api/schedule-profile-reconcile';
@@ -14,6 +17,22 @@ describe('Vercel Schedules Private Functions & Security Gates', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('Vercel Schedules Export Signatures (No default export, named POST export)', () => {
+    it('should expose named POST export and strictly NO default export for all scheduled functions', () => {
+      // ranking schedule
+      expect(typeof rankingScheduleModule.POST).toBe('function');
+      expect((rankingScheduleModule as any).default).toBeUndefined();
+
+      // match schedule
+      expect(typeof matchScheduleModule.POST).toBe('function');
+      expect((matchScheduleModule as any).default).toBeUndefined();
+
+      // profile reconcile schedule
+      expect(typeof profileScheduleModule.POST).toBe('function');
+      expect((profileScheduleModule as any).default).toBeUndefined();
+    });
   });
 
   describe('Production Cron Safety Gate (ENABLE_PRODUCTION_CRON=false)', () => {

@@ -73,4 +73,3 @@ export const POST = handleSchedule(async (metadata) => {
   await runScheduledProfileReconcile();
 });
 
-export default POST;
