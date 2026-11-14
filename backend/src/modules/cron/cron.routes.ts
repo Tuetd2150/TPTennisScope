@@ -15,7 +15,7 @@ router.use(cronAuth);
 const handleRankingCron = async (_req: Request, res: Response): Promise<void> => {
   console.log('[CronRoute] Initiating ranking sync cron job...');
   try {
-    const lockResult = await dbLockService.withLock('tennisscope:cron:ranking', async () => {
+    const lockResult = await dbLockService.withLock('tennisscope:sync:ranking', async () => {
       const { rankingSyncService } = await import('../sync/rankingSync.service');
       return rankingSyncService.sync();
     });
@@ -53,7 +53,7 @@ router.post('/ranking', handleRankingCron);
 const handleMatchCron = async (_req: Request, res: Response): Promise<void> => {
   console.log('[CronRoute] Initiating match sync cron job...');
   try {
-    const lockResult = await dbLockService.withLock('tennisscope:cron:matches', async () => {
+    const lockResult = await dbLockService.withLock('tennisscope:sync:matches', async () => {
       const { matchSyncService } = await import('../sync/matchSync.service');
       return matchSyncService.sync();
     });
@@ -91,7 +91,7 @@ router.post('/matches', handleMatchCron);
 const handleProfileCron = async (_req: Request, res: Response): Promise<void> => {
   console.log('[CronRoute] Initiating profile reconciliation cron job...');
   try {
-    const lockResult = await dbLockService.withLock('tennisscope:cron:profile', async () => {
+    const lockResult = await dbLockService.withLock('tennisscope:sync:profile', async () => {
       const { profileSyncService } = await import('../sync/profileSync.service');
       return profileSyncService.processPendingProfiles();
     });

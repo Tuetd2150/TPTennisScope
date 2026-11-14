@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@vercel/schedules": "^0.0.3",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^18.0.5",

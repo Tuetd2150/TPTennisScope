@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 import { env, getAllowedOrigins } from '../src/config/env';
-import { dbLockService } from '../src/modules/sync/dbLock.service';
+import { dbLockService, DbLockService } from '../src/modules/sync/dbLock.service';
+import { prisma } from '../src/config/database';
 
 describe('Deployment & Vercel Compatibility Tests', () => {
   const originalEnv = { ...process.env };
@@ -131,6 +132,84 @@ describe('Deployment & Vercel Compatibility Tests', () => {
       const retryRes = await dbLockService.withLock(lockKey, async () => 'recovered');
       expect(retryRes.executed).toBe(true);
       expect(retryRes.result).toBe('recovered');
+    });
+
+    it('should atomically serialize concurrent lease claims from separate serverless instances on the same lockKey', async () => {
+      const lockKey = 'test:lock:multi-instance-race';
+
+      // Clean up any lingering test jobs
+      await prisma.syncJob.deleteMany({
+        where: { targetKey: lockKey },
+      });
+
+      // Simulate 2 separate serverless instances (distinct memory spaces / distinct inProcessLocks)
+      const instanceA = new DbLockService();
+      const instanceB = new DbLockService();
+
+      let executions = 0;
+
+      // Both instances invoke withLock at the exact same time
+      const [resA, resB] = await Promise.all([
+        instanceA.withLock(lockKey, async () => {
+          executions++;
+          await new Promise((resolve) => setTimeout(resolve, 80));
+          return 'doneA';
+        }),
+        instanceB.withLock(lockKey, async () => {
+          executions++;
+          await new Promise((resolve) => setTimeout(resolve, 80));
+          return 'doneB';
+        }),
+      ]);
+
+      // Exactly one instance must have acquired and executed
+      const executedResults = [resA, resB].filter((r) => r.executed);
+      const skippedResults = [resA, resB].filter((r) => !r.executed);
+
+      expect(executedResults).toHaveLength(1);
+      expect(skippedResults).toHaveLength(1);
+      expect(skippedResults[0].reason).toBe('LOCKED_BY_ANOTHER_INSTANCE');
+      expect(executions).toBe(1);
+
+      // Clean up test job
+      await prisma.syncJob.deleteMany({
+        where: { targetKey: lockKey },
+      });
+    });
+
+    it('should allow independent lock keys to execute concurrently without blocking each other', async () => {
+      const lockKey1 = 'test:lock:ranking';
+      const lockKey2 = 'test:lock:matches';
+
+      // Clean up test jobs
+      await prisma.syncJob.deleteMany({
+        where: { targetKey: { in: [lockKey1, lockKey2] } },
+      });
+
+      const instanceA = new DbLockService();
+      const instanceB = new DbLockService();
+
+      const [res1, res2] = await Promise.all([
+        instanceA.withLock(lockKey1, async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return 'ranking_done';
+        }),
+        instanceB.withLock(lockKey2, async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return 'matches_done';
+        }),
+      ]);
+
+      expect(res1.executed).toBe(true);
+      expect(res1.result).toBe('ranking_done');
+
+      expect(res2.executed).toBe(true);
+      expect(res2.result).toBe('matches_done');
+
+      // Clean up test jobs
+      await prisma.syncJob.deleteMany({
+        where: { targetKey: { in: [lockKey1, lockKey2] } },
+      });
     });
   });
 });

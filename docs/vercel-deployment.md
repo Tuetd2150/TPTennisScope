@@ -98,32 +98,36 @@ Tại tab **Environment Variables**:
 
 ## 4. Lịch trình Vercel Cron (Đã cấu hình trong `backend/vercel.json`)
 
-Vercel Cron hoạt động theo múi giờ UTC, đã được quy đổi chính xác từ giờ Việt Nam (UTC+7):
+## 4. Lịch trình Vercel Schedules (Cấu hình trong `backend/vercel.json`)
 
-| Nhiệm vụ Sync | Giờ VN (UTC+7) | Giờ UTC tương ứng | Biểu thức Cron UTC | Endpoint |
+TennisScope sử dụng cơ chế **Vercel Schedules** mới (hỗ trợ bởi `@vercel/schedules` và private functions với `experimentalTriggers: schedule/v1beta`). Cơ chế này hỗ trợ trực tiếp múi giờ địa phương `Asia/Ho_Chi_Minh` mà không bị giới hạn 1 lần/ngày của Vercel Hobby Cron cũ:
+
+| Tên Schedule | Giờ chạy (Asia/Ho_Chi_Minh) | Biểu thức Cron | Target Function | Ghi chú an toàn |
 | :--- | :--- | :--- | :--- | :--- |
-| **Ranking Sync** | `03:00` hàng ngày | `20:00` hàng ngày | `0 20 * * *` | `/api/cron/ranking` |
-| **Match Sync** | `00:00, 06:00, 12:00, 18:00` (mỗi 6h) | `17:00, 23:00, 05:00, 11:00` | `0 5,11,17,23 * * *` | `/api/cron/matches` |
-| **Profile / Birthday** | `04:00` hàng ngày | `21:00` hàng ngày | `0 21 * * *` | `/api/cron/profile-reconcile` |
+| **`ranking-sync`** | `03:00` hàng ngày | `0 3 * * *` | `api/schedule-ranking` | Top 100 ranking, ENTER/STAY/LEAVE, new snapshots |
+| **`match-sync`** | `00:00, 06:00, 12:00, 18:00` (mỗi 6h) | `0 0,6,12,18 * * *` | `api/schedule-matches` | Incremental singles match sync (OR Top 100 rule) |
+| **`profile-reconcile`** | `04:00` hàng ngày | `0 4 * * *` | `api/schedule-profile-reconcile` | Reconcile birthdays/profiles (Quota-aware, Safety buffer 6) |
 
-*Ghi chú*:
-- Vercel Cron tự động gắn header `Authorization: Bearer ${CRON_SECRET}` khi gửi request.
-- Các route cron được bảo vệ bằng **PostgreSQL Advisory Lock** (`pg_try_advisory_lock`), đảm bảo không có 2 instance serverless nào chạy trùng lặp khi Vercel scale.
+*Đặc tính an toàn của Vercel Schedules*:
+- **Private Function**: Nhờ trigger `schedule/v1beta`, các function này **không có URL công khai**, không thể bị kích hoạt từ internet.
+- **Header CloudEvent Validation**: SDK `@vercel/schedules` tự động kiểm tra chữ ký CloudEvent từ scheduler nội bộ của Vercel. Mọi HTTP request thông thường từ ngoài sẽ bị từ chối `400 Bad Request`.
+- **Database Row Lock (Neon/PgBouncer-safe)**: Khóa chống chạy trùng lặp sử dụng bảng `SyncJob` với TTL 15 phút, hoàn toàn tương thích với cơ chế connection pooler của Neon.
 
 ---
 
 ## 5. Quy trình kích hoạt an toàn (Zero-Quota-Leak Sequence)
 
-Để đảm bảo không bao giờ xảy ra tình trạng chạy đồng thời 2 scheduler (local và Vercel) hoặc chạy cron khi database cloud chưa có dữ liệu:
-
 1. **Deploy Backend**: `ENABLE_PRODUCTION_CRON=false`.
-2. **Thực hiện Migration Dữ liệu**: Làm theo `docs/database-migration-runbook.md`.
-3. **Chạy Kiểm định**: Chạy `npm run db:verify --workspace=backend` với Cloud DB. Kết quả phải `✅ PASS`.
-4. **Deploy Frontend**: Kết nối và test giao diện trên browser.
-5. **Tắt Scheduler Local**:
-   - Nếu chạy server local, đặt `ENABLE_LOCAL_SCHEDULER=false` trong `backend/.env`.
-6. **Kích hoạt Production Cron**:
+2. **Kiểm tra trên Vercel Dashboard**:
+   - Truy cập Vercel Dashboard -> Project `tennisscope-api` (hoặc `tp-tennis-scope-api`).
+   - Vào tab **Settings** -> mục **Schedules** (hoặc tab **Schedules** trực tiếp trên thanh điều hướng project nếu giao diện mới hiển thị).
+   - Bạn sẽ thấy 3 schedules tĩnh: `ranking-sync`, `match-sync`, `profile-reconcile`.
+   - Mỗi schedule sẽ hiển thị trạng thái, biểu thức cron và múi giờ `Asia/Ho_Chi_Minh`.
+3. **Tắt Scheduler Local**:
+   - Nếu chạy server local, đặt `ENABLE_LOCAL_SCHEDULER=false` trong `backend/.env` để tránh double scheduler.
+4. **Kích hoạt Production Sync**:
    - Vào Vercel Backend Project -> **Settings** -> **Environment Variables**.
-   - Đổi `ENABLE_PRODUCTION_CRON` từ `false` thành `true`.
-   - Bấm **Redeploy** phiên bản backend mới nhất.
-7. **Xác nhận**: Theo dõi tab **Cron** trên Vercel Dashboard của backend project.
+   - Tìm biến `ENABLE_PRODUCTION_CRON`, sửa giá trị từ `false` thành `true`.
+   - Bấm **Save**.
+   - Vào tab **Deployments**, chọn deployment mới nhất -> bấm dấu 3 chấm `...` -> chọn **Redeploy** (để Vercel nạp giá trị biến môi trường mới vào serverless container).
+5. **Theo dõi**: Kiểm tra log của các scheduled functions trong tab **Logs** hoặc **Schedules** của project backend.
