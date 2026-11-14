@@ -5,19 +5,5 @@
       "source": "/(.*)",
       "destination": "/api"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/ranking",
-      "schedule": "0 20 * * *"
-    },
-    {
-      "path": "/api/cron/matches",
-      "schedule": "0 5,11,17,23 * * *"
-    },
-    {
-      "path": "/api/cron/profile-reconcile",
-      "schedule": "0 21 * * *"
-    }
   ]
 }
